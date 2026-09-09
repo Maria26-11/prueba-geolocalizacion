@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Prueba de geolocalización - Grit Box</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #111;
+            color: white;
+
+            min-height: 100vh;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            padding: 20px;
+        }
+
+        .contenedor {
+            width: 100%;
+            max-width: 450px;
+
+            background-color: #1c1c1c;
+
+            border: 1px solid #333;
+            border-radius: 15px;
+
+            padding: 25px;
+        }
+
+        h1 {
+            margin-top: 0;
+            font-size: 25px;
+        }
+
+        p {
+            color: #ddd;
+            line-height: 1.5;
+        }
+
+        button {
+            width: 100%;
+
+            padding: 15px;
+            margin-top: 12px;
+
+            border: none;
+            border-radius: 10px;
+
+            font-size: 16px;
+            font-weight: bold;
+
+            cursor: pointer;
+        }
+
+        .boton-guardar {
+            background-color: #f9d900;
+            color: black;
+        }
+
+        .boton-probar {
+            background-color: white;
+            color: black;
+        }
+
+        .boton-borrar {
+            background-color: #333;
+            color: white;
+        }
+
+        #resultado {
+            margin-top: 20px;
+
+            background-color: #252525;
+
+            border-radius: 10px;
+
+            padding: 15px;
+
+            line-height: 1.6;
+
+            white-space: pre-line;
+        }
+
+        #ubicacionGuardada {
+            margin-top: 15px;
+
+            font-size: 14px;
+            color: #bbb;
+
+            word-break: break-word;
+        }
+
+        .correcto {
+            border-left: 5px solid #39d98a;
+        }
+
+        .incorrecto {
+            border-left: 5px solid #ff5c5c;
+        }
+
+        .informacion {
+            border-left: 5px solid #f9d900;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <div class="contenedor">
+
+        <h1>📍 Prueba de asistencia Grit Box</h1>
+
+        <p>
+            Primero guarde la ubicación del gimnasio.
+            Después puede comprobar si se encuentra dentro
+            del radio permitido.
+        </p>
+
+
+        <button
+            class="boton-guardar"
+            id="guardarUbicacion">
+
+            Guardar ubicación del gimnasio
+
+        </button>
+
+
+        <button
+            class="boton-probar"
+            id="probarAsistencia">
+
+            Probar asistencia
+
+        </button>
+
+
+        <button
+            class="boton-borrar"
+            id="borrarUbicacion">
+
+            Borrar ubicación guardada
+
+        </button>
+
+
+        <div
+            id="resultado"
+            class="informacion">
+
+            Todavía no se ha realizado ninguna prueba.
+
+        </div>
+
+
+        <div id="ubicacionGuardada"></div>
+
+    </div>
+
+
+
+    <script>
+
+        // Distancia máxima permitida
+        // para registrar asistencia
+
+        const RADIO_PERMITIDO = 80;
+
+
+
+        const resultado =
+            document.getElementById("resultado");
+
+
+        const ubicacionGuardada =
+            document.getElementById("ubicacionGuardada");
+
+
+
+        // Mostrar mensajes
+
+        function mostrarMensaje(mensaje, tipo) {
+
+            resultado.className = tipo;
+
+            resultado.id = "resultado";
+
+            resultado.textContent = mensaje;
+        }
+
+
+
+        // Mostrar ubicación guardada
+
+        function mostrarUbicacionGuardada() {
+
+            const datos =
+                localStorage.getItem("ubicacionGritBox");
+
+
+            if (datos === null) {
+
+                ubicacionGuardada.textContent =
+                    "No hay ubicación del gimnasio guardada.";
+
+                return;
+            }
+
+
+            const gimnasio =
+                JSON.parse(datos);
+
+
+            ubicacionGuardada.textContent =
+                "Ubicación guardada: "
+                + gimnasio.latitud.toFixed(6)
+                + ", "
+                + gimnasio.longitud.toFixed(6);
+
+        }
+
+
+
+        // Obtener ubicación del celular
+
+        function obtenerUbicacion(funcion) {
+
+            if (!navigator.geolocation) {
+
+                mostrarMensaje(
+                    "❌ Este navegador no permite usar geolocalización.",
+                    "incorrecto"
+                );
+
+                return;
+            }
+
+
+            mostrarMensaje(
+                "Buscando ubicación del teléfono...",
+                "informacion"
+            );
+
+
+            navigator.geolocation.getCurrentPosition(
+
+                funcion,
+
+
+                function (error) {
+
+                    let mensaje =
+                        "No fue posible obtener la ubicación.";
+
+
+                    if (error.code === 1) {
+
+                        mensaje =
+                            "Debe permitir el acceso a su ubicación.";
+                    }
+
+
+                    if (error.code === 2) {
+
+                        mensaje =
+                            "El celular no pudo determinar su ubicación.";
+                    }
+
+
+                    if (error.code === 3) {
+
+                        mensaje =
+                            "Se agotó el tiempo buscando la ubicación.";
+                    }
+
+
+                    mostrarMensaje(
+                        "❌ " + mensaje,
+                        "incorrecto"
+                    );
+
+                },
+
+
+                {
+                    enableHighAccuracy: true,
+
+                    timeout: 15000,
+
+                    maximumAge: 0
+                }
+
+            );
+
+        }
+
+
+
+        // Calcular distancia entre
+        // dos ubicaciones
+
+        function calcularDistancia(
+            latitud1,
+            longitud1,
+            latitud2,
+            longitud2
+        ) {
+
+            const RADIO_TIERRA = 6371000;
+
+
+            const convertirRadianes =
+                Math.PI / 180;
+
+
+            const diferenciaLatitud =
+                (latitud2 - latitud1)
+                * convertirRadianes;
+
+
+            const diferenciaLongitud =
+                (longitud2 - longitud1)
+                * convertirRadianes;
+
+
+
+            const calculo =
+
+                Math.sin(
+                    diferenciaLatitud / 2
+                ) ** 2
+
+                +
+
+                Math.cos(
+                    latitud1
+                    * convertirRadianes
+                )
+
+                *
+
+                Math.cos(
+                    latitud2
+                    * convertirRadianes
+                )
+
+                *
+
+                Math.sin(
+                    diferenciaLongitud / 2
+                ) ** 2;
+
+
+
+            const angulo =
+
+                2
+
+                *
+
+                Math.atan2(
+                    Math.sqrt(calculo),
+                    Math.sqrt(1 - calculo)
+                );
+
+
+
+            return RADIO_TIERRA * angulo;
+
+        }
+
+
+
+        // GUARDAR UBICACIÓN DEL GIMNASIO
+
+        document
+            .getElementById("guardarUbicacion")
+            .addEventListener(
+                "click",
+                function () {
+
+                    obtenerUbicacion(
+
+                        function (posicion) {
+
+                            const gimnasio = {
+
+                                latitud:
+                                    posicion.coords.latitude,
+
+                                longitud:
+                                    posicion.coords.longitude
+                            };
+
+
+                            localStorage.setItem(
+                                "ubicacionGritBox",
+                                JSON.stringify(gimnasio)
+                            );
+
+
+                            mostrarUbicacionGuardada();
+
+
+                            mostrarMensaje(
+
+                                "✅ Ubicación del gimnasio guardada."
+                                + "\n\n"
+                                + "Latitud: "
+                                + gimnasio.latitud.toFixed(6)
+                                + "\n"
+                                + "Longitud: "
+                                + gimnasio.longitud.toFixed(6)
+                                + "\n"
+                                + "Precisión aproximada: ±"
+                                + Math.round(
+                                    posicion.coords.accuracy
+                                )
+                                + " metros",
+
+                                "correcto"
+
+                            );
+
+                        }
+
+                    );
+
+                }
+            );
+
+
+
+        // PROBAR ASISTENCIA
+
+        document
+            .getElementById("probarAsistencia")
+            .addEventListener(
+                "click",
+                function () {
+
+                    const datos =
+                        localStorage.getItem(
+                            "ubicacionGritBox"
+                        );
+
+
+                    if (datos === null) {
+
+                        mostrarMensaje(
+
+                            "❌ Primero debe guardar la ubicación del gimnasio.",
+
+                            "incorrecto"
+
+                        );
+
+                        return;
+                    }
+
+
+                    const gimnasio =
+                        JSON.parse(datos);
+
+
+
+                    obtenerUbicacion(
+
+                        function (posicion) {
+
+                            const latitudCliente =
+                                posicion.coords.latitude;
+
+
+                            const longitudCliente =
+                                posicion.coords.longitude;
+
+
+                            const precision =
+                                posicion.coords.accuracy;
+
+
+
+                            const distancia =
+                                calcularDistancia(
+
+                                    latitudCliente,
+
+                                    longitudCliente,
+
+                                    gimnasio.latitud,
+
+                                    gimnasio.longitud
+
+                                );
+
+
+
+                            if (
+                                distancia
+                                <= RADIO_PERMITIDO
+                            ) {
+
+                                mostrarMensaje(
+
+                                    "✅ ASISTENCIA PERMITIDA"
+                                    + "\n\n"
+                                    + "Está a "
+                                    + Math.round(distancia)
+                                    + " metros del gimnasio."
+                                    + "\n"
+                                    + "Precisión aproximada: ±"
+                                    + Math.round(precision)
+                                    + " metros."
+                                    + "\n"
+                                    + "Radio permitido: "
+                                    + RADIO_PERMITIDO
+                                    + " metros.",
+
+                                    "correcto"
+
+                                );
+
+                            }
+
+                            else {
+
+                                mostrarMensaje(
+
+                                    "❌ ASISTENCIA NO PERMITIDA"
+                                    + "\n\n"
+                                    + "Está a "
+                                    + Math.round(distancia)
+                                    + " metros del gimnasio."
+                                    + "\n"
+                                    + "Precisión aproximada: ±"
+                                    + Math.round(precision)
+                                    + " metros."
+                                    + "\n"
+                                    + "Debe estar a "
+                                    + RADIO_PERMITIDO
+                                    + " metros o menos.",
+
+                                    "incorrecto"
+
+                                );
+
+                            }
+
+                        }
+
+                    );
+
+                }
+            );
+
+
+
+        // BORRAR UBICACIÓN GUARDADA
+
+        document
+            .getElementById("borrarUbicacion")
+            .addEventListener(
+                "click",
+                function () {
+
+                    localStorage.removeItem(
+                        "ubicacionGritBox"
+                    );
+
+
+                    mostrarUbicacionGuardada();
+
+
+                    mostrarMensaje(
+
+                        "Ubicación guardada eliminada.",
+
+                        "informacion"
+
+                    );
+
+                }
+            );
+
+
+
+        mostrarUbicacionGuardada();
+
+    </script>
+
+</body>
+
+</html>
