@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Prueba de geolocalización - Grit Box</title>
+    <title>Asistencia - Grit Box</title>
 
     <style>
         * {
@@ -32,7 +32,6 @@
             max-width: 450px;
 
             background-color: #1c1c1c;
-
             border: 1px solid #333;
             border-radius: 15px;
 
@@ -69,7 +68,7 @@
             color: black;
         }
 
-        .boton-probar {
+        .boton-asistencia {
             background-color: white;
             color: black;
         }
@@ -98,8 +97,6 @@
 
             font-size: 14px;
             color: #bbb;
-
-            word-break: break-word;
         }
 
         .correcto {
@@ -113,37 +110,36 @@
         .informacion {
             border-left: 5px solid #f9d900;
         }
-    </style>
 
+    </style>
 </head>
 
 <body>
 
     <div class="contenedor">
 
-        <h1>📍 Prueba de asistencia Grit Box</h1>
+        <h1>📍 Asistencia Grit Box</h1>
 
         <p>
-            Primero guarde la ubicación del gimnasio.
-            Después puede comprobar si se encuentra dentro
-            del radio permitido.
+            Para registrar su asistencia debe encontrarse
+            físicamente en Grit Box.
         </p>
 
-
+        <!-- ESTE BOTÓN SOLO LO USAMOS PARA LA PRUEBA -->
         <button
             class="boton-guardar"
             id="guardarUbicacion">
 
-            Guardar ubicación del gimnasio
+            Guardar ubicación de Grit Box
 
         </button>
 
 
         <button
-            class="boton-probar"
-            id="probarAsistencia">
+            class="boton-asistencia"
+            id="registrarAsistencia">
 
-            Probar asistencia
+            Registrar asistencia
 
         </button>
 
@@ -161,7 +157,7 @@
             id="resultado"
             class="informacion">
 
-            Todavía no se ha realizado ninguna prueba.
+            Presione "Registrar asistencia".
 
         </div>
 
@@ -171,26 +167,26 @@
     </div>
 
 
-
     <script>
 
-        // Distancia máxima permitida
-        // para registrar asistencia
+        /*
+            RADIO PERMITIDO
 
-        const RADIO_PERMITIDO = 80;
+            El cliente solamente puede registrar
+            asistencia si está a 80 metros o menos
+            de Grit Box.
+        */
 
+        const RADIO_PERMITIDO = 20;
 
 
         const resultado =
             document.getElementById("resultado");
 
-
         const ubicacionGuardada =
             document.getElementById("ubicacionGuardada");
 
 
-
-        // Mostrar mensajes
 
         function mostrarMensaje(mensaje, tipo) {
 
@@ -199,11 +195,16 @@
             resultado.id = "resultado";
 
             resultado.textContent = mensaje;
+
         }
 
 
 
-        // Mostrar ubicación guardada
+        /*
+            MOSTRAR SI YA TENEMOS
+            GUARDADA LA UBICACIÓN
+            DE GRIT BOX
+        */
 
         function mostrarUbicacionGuardada() {
 
@@ -214,7 +215,7 @@
             if (datos === null) {
 
                 ubicacionGuardada.textContent =
-                    "No hay ubicación del gimnasio guardada.";
+                    "Todavía no se ha guardado la ubicación de Grit Box.";
 
                 return;
             }
@@ -225,33 +226,40 @@
 
 
             ubicacionGuardada.textContent =
-                "Ubicación guardada: "
-                + gimnasio.latitud.toFixed(6)
-                + ", "
-                + gimnasio.longitud.toFixed(6);
+                "📍 Ubicación de Grit Box guardada.";
 
         }
 
 
 
-        // Obtener ubicación del celular
+        /*
+            OBTENER UBICACIÓN ACTUAL
+            DEL CELULAR
+        */
 
         function obtenerUbicacion(funcion) {
 
             if (!navigator.geolocation) {
 
                 mostrarMensaje(
-                    "❌ Este navegador no permite usar geolocalización.",
+
+                    "❌ Su dispositivo no permite utilizar la ubicación.",
+
                     "incorrecto"
+
                 );
 
                 return;
+
             }
 
 
             mostrarMensaje(
-                "Buscando ubicación del teléfono...",
+
+                "📍 Comprobando su ubicación...",
+
                 "informacion"
+
             );
 
 
@@ -263,33 +271,39 @@
                 function (error) {
 
                     let mensaje =
-                        "No fue posible obtener la ubicación.";
+                        "No fue posible obtener su ubicación.";
 
 
                     if (error.code === 1) {
 
                         mensaje =
-                            "Debe permitir el acceso a su ubicación.";
+                            "Debe permitir el acceso a su ubicación para registrar asistencia.";
+
                     }
 
 
                     if (error.code === 2) {
 
                         mensaje =
-                            "El celular no pudo determinar su ubicación.";
+                            "No fue posible determinar su ubicación.";
+
                     }
 
 
                     if (error.code === 3) {
 
                         mensaje =
-                            "Se agotó el tiempo buscando la ubicación.";
+                            "Se agotó el tiempo intentando obtener su ubicación.";
+
                     }
 
 
                     mostrarMensaje(
+
                         "❌ " + mensaje,
+
                         "incorrecto"
+
                     );
 
                 },
@@ -297,9 +311,7 @@
 
                 {
                     enableHighAccuracy: true,
-
                     timeout: 15000,
-
                     maximumAge: 0
                 }
 
@@ -309,8 +321,11 @@
 
 
 
-        // Calcular distancia entre
-        // dos ubicaciones
+        /*
+            CALCULAR LA DISTANCIA
+            ENTRE EL CLIENTE Y
+            GRIT BOX
+        */
 
         function calcularDistancia(
             latitud1,
@@ -321,20 +336,18 @@
 
             const RADIO_TIERRA = 6371000;
 
-
-            const convertirRadianes =
+            const radianes =
                 Math.PI / 180;
 
 
             const diferenciaLatitud =
                 (latitud2 - latitud1)
-                * convertirRadianes;
+                * radianes;
 
 
             const diferenciaLongitud =
                 (longitud2 - longitud1)
-                * convertirRadianes;
-
+                * radianes;
 
 
             const calculo =
@@ -346,15 +359,13 @@
                 +
 
                 Math.cos(
-                    latitud1
-                    * convertirRadianes
+                    latitud1 * radianes
                 )
 
                 *
 
                 Math.cos(
-                    latitud2
-                    * convertirRadianes
+                    latitud2 * radianes
                 )
 
                 *
@@ -364,7 +375,6 @@
                 ) ** 2;
 
 
-
             const angulo =
 
                 2
@@ -372,10 +382,12 @@
                 *
 
                 Math.atan2(
-                    Math.sqrt(calculo),
-                    Math.sqrt(1 - calculo)
-                );
 
+                    Math.sqrt(calculo),
+
+                    Math.sqrt(1 - calculo)
+
+                );
 
 
             return RADIO_TIERRA * angulo;
@@ -384,7 +396,15 @@
 
 
 
-        // GUARDAR UBICACIÓN DEL GIMNASIO
+        /*
+            GUARDAR UBICACIÓN
+            DE GRIT BOX
+
+            IMPORTANTE:
+            ESTE BOTÓN SE DEBE PRESIONAR
+            ESTANDO FÍSICAMENTE
+            EN EL GIMNASIO.
+        */
 
         document
             .getElementById("guardarUbicacion")
@@ -392,9 +412,11 @@
                 "click",
                 function () {
 
+
                     obtenerUbicacion(
 
                         function (posicion) {
+
 
                             const gimnasio = {
 
@@ -403,12 +425,16 @@
 
                                 longitud:
                                     posicion.coords.longitude
+
                             };
 
 
                             localStorage.setItem(
+
                                 "ubicacionGritBox",
+
                                 JSON.stringify(gimnasio)
+
                             );
 
 
@@ -417,19 +443,9 @@
 
                             mostrarMensaje(
 
-                                "✅ Ubicación del gimnasio guardada."
-                                + "\n\n"
-                                + "Latitud: "
-                                + gimnasio.latitud.toFixed(6)
-                                + "\n"
-                                + "Longitud: "
-                                + gimnasio.longitud.toFixed(6)
-                                + "\n"
-                                + "Precisión aproximada: ±"
-                                + Math.round(
-                                    posicion.coords.accuracy
-                                )
-                                + " metros",
+                                "✅ Ubicación de Grit Box guardada correctamente."
+                                +
+                                "\n\nAhora puede probar el registro de asistencia.",
 
                                 "correcto"
 
@@ -444,13 +460,16 @@
 
 
 
-        // PROBAR ASISTENCIA
+        /*
+            REGISTRAR ASISTENCIA
+        */
 
         document
-            .getElementById("probarAsistencia")
+            .getElementById("registrarAsistencia")
             .addEventListener(
                 "click",
                 function () {
+
 
                     const datos =
                         localStorage.getItem(
@@ -458,17 +477,23 @@
                         );
 
 
+                    /*
+                        SI NO HEMOS GUARDADO
+                        LA UBICACIÓN DEL GIMNASIO
+                    */
+
                     if (datos === null) {
 
                         mostrarMensaje(
 
-                            "❌ Primero debe guardar la ubicación del gimnasio.",
+                            "❌ Primero debe guardar la ubicación de Grit Box.",
 
                             "incorrecto"
 
                         );
 
                         return;
+
                     }
 
 
@@ -477,9 +502,15 @@
 
 
 
+                    /*
+                        OBTENER UBICACIÓN
+                        ACTUAL DEL CLIENTE
+                    */
+
                     obtenerUbicacion(
 
                         function (posicion) {
+
 
                             const latitudCliente =
                                 posicion.coords.latitude;
@@ -493,6 +524,10 @@
                                 posicion.coords.accuracy;
 
 
+
+                            /*
+                                CALCULAR DISTANCIA
+                            */
 
                             const distancia =
                                 calcularDistancia(
@@ -509,26 +544,39 @@
 
 
 
+                            /*
+                                SI ESTÁ DENTRO
+                                DEL RADIO DEL GIMNASIO
+                            */
+
                             if (
-                                distancia
-                                <= RADIO_PERMITIDO
+                                distancia <= RADIO_PERMITIDO
                             ) {
+
+
+                                const fecha =
+                                    new Date();
+
 
                                 mostrarMensaje(
 
-                                    "✅ ASISTENCIA PERMITIDA"
-                                    + "\n\n"
-                                    + "Está a "
-                                    + Math.round(distancia)
-                                    + " metros del gimnasio."
-                                    + "\n"
-                                    + "Precisión aproximada: ±"
-                                    + Math.round(precision)
-                                    + " metros."
-                                    + "\n"
-                                    + "Radio permitido: "
-                                    + RADIO_PERMITIDO
-                                    + " metros.",
+                                    "✅ ASISTENCIA REGISTRADA"
+                                    +
+                                    "\n\nSe encuentra dentro de Grit Box."
+                                    +
+                                    "\n\nDistancia al gimnasio: "
+                                    +
+                                    Math.round(distancia)
+                                    +
+                                    " metros."
+                                    +
+                                    "\n\nFecha: "
+                                    +
+                                    fecha.toLocaleDateString()
+                                    +
+                                    "\nHora: "
+                                    +
+                                    fecha.toLocaleTimeString(),
 
                                     "correcto"
 
@@ -536,23 +584,32 @@
 
                             }
 
+
+                            /*
+                                SI ESTÁ FUERA
+                                DEL GIMNASIO
+                            */
+
                             else {
+
 
                                 mostrarMensaje(
 
-                                    "❌ ASISTENCIA NO PERMITIDA"
-                                    + "\n\n"
-                                    + "Está a "
-                                    + Math.round(distancia)
-                                    + " metros del gimnasio."
-                                    + "\n"
-                                    + "Precisión aproximada: ±"
-                                    + Math.round(precision)
-                                    + " metros."
-                                    + "\n"
-                                    + "Debe estar a "
-                                    + RADIO_PERMITIDO
-                                    + " metros o menos.",
+                                    "❌ NO PUEDE REGISTRAR LA ASISTENCIA"
+                                    +
+                                    "\n\nNo se encuentra en Grit Box."
+                                    +
+                                    "\n\nActualmente está aproximadamente a "
+                                    +
+                                    Math.round(distancia)
+                                    +
+                                    " metros del gimnasio."
+                                    +
+                                    "\n\nDebe encontrarse a "
+                                    +
+                                    RADIO_PERMITIDO
+                                    +
+                                    " metros o menos para registrar su asistencia.",
 
                                     "incorrecto"
 
@@ -569,13 +626,17 @@
 
 
 
-        // BORRAR UBICACIÓN GUARDADA
+        /*
+            BORRAR UBICACIÓN
+            GUARDADA
+        */
 
         document
             .getElementById("borrarUbicacion")
             .addEventListener(
                 "click",
                 function () {
+
 
                     localStorage.removeItem(
                         "ubicacionGritBox"
@@ -587,7 +648,7 @@
 
                     mostrarMensaje(
 
-                        "Ubicación guardada eliminada.",
+                        "Ubicación de Grit Box eliminada.",
 
                         "informacion"
 
@@ -595,7 +656,6 @@
 
                 }
             );
-
 
 
         mostrarUbicacionGuardada();
